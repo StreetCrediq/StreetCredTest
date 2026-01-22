@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreetCred IQ | The Local Ecosystem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&family=Outfit:wght@300;500;800&family=Noto+Sans+Arabic:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --deep-forest: #0B1A13;
+            --gold: #C5A059;
+            --bone: #F2EFE9;
+            --clay: #3D4035;
+        }
+        
+        body { 
+            font-family: 'Outfit', 'Noto Sans Arabic', sans-serif; 
+            background-color: var(--bone); 
+            color: var(--deep-forest); 
+            scroll-behavior: smooth; 
+            overflow-x: hidden; 
+        }
+
+        .serif { font-family: 'Cormorant Garamond', serif; }
+        
+        .bg-noise {
+            background-image: url("https://www.transparenttextures.com/patterns/stardust.png");
+        }
+
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 1s cubic-bezier(0.22, 1, 0.36, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+        
+        #map { 
+            height: 600px; 
+            width: 100%; 
+            border-radius: 40px;
+            filter: grayscale(1) invert(0.9) sepia(0.2); 
+            border: 1px solid var(--gold);
+        }
+
+        .section-card { 
+            background: white;
+            border: 1px solid rgba(11, 26, 19, 0.05);
+            border-radius: 40px;
+            transition: all 0.5s ease;
+        }
+        
+        .section-card:hover { 
+            transform: scale(1.02);
+            border-color: var(--gold);
+            box-shadow: 0 40px 80px rgba(11, 26, 19, 0.1);
+        }
+
+        .active-lang { background: var(--gold) !important; color: white !important; }
+
+        .marquee-container { background: var(--gold); color: white; padding: 15px 0; overflow: hidden; }
+        .marquee-content { display: flex; animation: marquee 30s linear infinite; width: max-content; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        .btn-luxury {
+            background: var(--deep-forest);
+            color: var(--bone);
+            padding: 1.25rem 3rem;
+            border-radius: 100px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-luxury:hover {
+            background: var(--gold);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(197, 160, 89, 0.3);
+        }
+
+        .pulse-marker { 
+            background: var(--gold); 
+            border-radius: 50%; 
+            animation: pulse-gold 2s infinite; 
+            border: 2px solid var(--bone); 
+        }
+        @keyframes pulse-gold { 
+            0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.7); } 
+            70% { box-shadow: 0 0 0 15px rgba(197, 160, 89, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); } 
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-noise">
+
+    <nav class="flex justify-between items-center p-8 sticky top-0 z-[1000] bg-bone/80 backdrop-blur-md">
+        <div class="text-2xl font-black tracking-tighter flex items-center gap-2">
+            <span class="text-deep-forest">STREETCRED</span> 
+            <span class="text-gold italic">IQ</span>
+        </div>
+        <div class="hidden lg:flex items-center gap-10 text-[10px] font-bold uppercase tracking-[0.2em] text-deep-forest/60">
+            <a href="#blueprint" id="nav-1" class="hover:text-gold transition">How it works</a>
+            <a href="#creators" id="nav-2" class="hover:text-gold transition">Creators</a>
+            <a href="#business" id="nav-3" class="hover:text-gold transition">Business</a>
+            <a href="#faq" id="nav-4" class="hover:text-gold transition">FAQ</a>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex bg-white rounded-full p-1 border border-black/5 shadow-sm">
+                <button id="btn-en" onclick="changeLang('en')" class="px-3 py-1 text-[10px] font-bold rounded-full active-lang">EN</button>
+                <button id="btn-ar" onclick="changeLang('ar')" class="px-3 py-1 text-[10px] font-bold rounded-full">AR</button>
+                <button id="btn-ku" onclick="changeLang('ku')" class="px-3 py-1 text-[10px] font-bold rounded-full">KU</button>
+            </div>
+            <button onclick="openModal()" class="bg-white text-bone px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-gold transition">Join</button>
+        </div>
+    </nav>
+
+    <header class="relative min-h-[90vh] flex flex-col justify-center items-center text-center px-4 hero-bg rounded-b-[60px] md:rounded-b-[100px] overflow-hidden">
+        <div class="relative z-10 reveal active max-w-5xl">
+            <div class="inline-block border border-gold/30 text-gold px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-[0.5em] mb-8 backdrop-blur-sm">Phase One Is Live</div>
+            <h1 id="hero-title" class="text-7xl md:text-[140px] font-extrabold mb-8 tracking-tighter leading-[0.85] text-black">STREETS <br><span class="serif italic text-gold font-light">OF IRAQ.</span></h1>
+            <p id="hero-desc" class="text-lg md:text-2xl text-bone/70 max-w-2xl mx-auto mb-12 font-light leading-relaxed">The first hyper-local marketing engine built for the neighborhoods of Iraq. We turn your social influence into real-world rewards.</p>
+            <div class="flex flex-col md:flex-row gap-6 justify-center">
+                <button onclick="openModal()" id="hero-btn-1" class="btn-luxury">Find a Bounty</button>
+                <a href="#business" id="hero-btn-2" class="px-10 py-5 rounded-full border border-bone/20 text-bone text-lg font-bold hover:bg-bone hover:text-deep-forest transition-all">Post a Bounty</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="marquee-container">
+        <div class="marquee-content font-bold uppercase text-[12px] tracking-widest">
+            <div class="px-10"> @test claimed $50 at test</div>
+            <div class="px-10"> @test unlocked VIP Perks at test</div>
+            <div class="px-10"> @test posted a Bounty for test</div>
+            <div class="px-10"> @test earned $30 at test</div>
+            <div class="px-10"> @test claimed $50 at test</div>
+            <div class="px-10"> @test unlocked VIP Perks at test</div>
+            <div class="px-10"> @test posted a Bounty for test</div>
+            <div class="px-10"> @test earned $30 at test</div>
+        </div>
+    </div>
+
+    <section id="blueprint" class="py-32 px-6 reveal">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-12 gap-12 items-center">
+                <div class="lg:col-span-7 text-start-rtl">
+                    <h2 id="obj-tag" class="text-gold font-bold uppercase tracking-[0.4em] text-xs mb-6">Our Objective</h2>
+                    <h3 id="obj-title" class="text-5xl md:text-8xl font-extrabold leading-none mb-10">Killing the <br><span class="serif italic text-gold">Middleman.</span></h3>
+                    <p id="obj-desc" class="text-deep-forest/70 text-xl leading-relaxed max-w-xl">Traditional ads are broken. They take money from our local shops and give it to big tech companies. <strong>StreetCred</strong> keeps that money in the neighborhood by paying <strong>you</strong> to support the spots you love.</p>
+                </div>
+                <div class="lg:col-span-5 grid grid-cols-1 gap-4">
+                    <div class="p-12 section-card bg-deep-forest text-bone">
+                        <div class="text-6xl font-black text-gold mb-2">100%</div>
+                        <div id="stat-1" class="text-xs uppercase font-bold tracking-widest opacity-60">Local Verified</div>
+                    </div>
+                    <div class="p-12 section-card border-gold/20">
+                        <div class="text-6xl font-black text-deep-forest mb-2">$0</div>
+                        <div id="stat-2" class="text-xs uppercase font-bold tracking-widest text-gold">Fake Impressions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 px-6 bg-deep-forest text-bone rounded-[60px] mx-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-8 items-center">
+            <div class="flex-1">
+                <h4 class="serif italic text-4xl text-gold mb-4">"The streets never lie."</h4>
+                <p class="opacity-100 uppercase text-[10px] tracking-[0.3em]">Direct connection between brands and people</p>
+            </div>
+            <div class="flex gap-4">
+                <div class="w-24 h-24 rounded-full border border-gold/30 flex items-center justify-center text-gold"></div>
+                <div class="w-24 h-24 rounded-full bg-gold flex items-center justify-center text-deep-forest font-bold"></div>
+                <div class="w-24 h-24 rounded-full border border-gold/30 flex items-center justify-center text-gold"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="creators" class="py-32 px-6 bg-deep-forest text-bone rounded-t-[100px] reveal">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-24">
+                <h2 id="creator-tag" class="text-gold font-bold tracking-[0.4em] uppercase text-xs mb-6">The Creator Portal</h2>
+                <h3 id="creator-title" class="text-6xl md:text-[100px] font-extrabold uppercase mb-8">Your City, <br><span class="serif italic text-gold">Your Paycheck.</span></h3>
+                <p id="creator-desc" class="text-bone/50 text-xl max-w-2xl mx-auto mb-16">Have 1k+ followers? Stop posting for free. Visit local spots, share your vibe, and get paid in cash or VIP credits.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-12">
+                <div class="p-12 section-card bg-deep-forest text-bone">
+                    <h4 id="c-step-1-t" class="text-2xl font-bold uppercase mb-4 text-gold">Discover</h4>
+                    <p id="c-step-1-d" class="text-bone/40 text-sm leading-relaxed">Open the map. See who is offering a bounty in your neighborhood right now.</p>
+                </div>
+                <div class="p-12 section-card bg-deep-forest text-bone">
+                    <h4 id="c-step-2-t" class="text-2xl font-bold uppercase mb-4 text-gold">Create</h4>
+                    <p id="c-step-2-d" class="text-bone/40 text-sm leading-relaxed">Visit the shop, enjoy the experience, and post an authentic story or reel.</p>
+                </div>
+                <div class="p-12 section-card bg-deep-forest text-bone">
+                    <h4 id="c-step-3-t" class="text-2xl font-bold uppercase mb-4 text-gold">Unlock</h4>
+                    <p id="c-step-3-d" class="text-bone/40 text-sm leading-relaxed">Once verified, your cash reward or credit is released instantly. No waiting.</p>
+                </div>
+            </div>
+
+            <div class="mt-32">
+                <h4 class="text-center font-bold uppercase text-xs tracking-[0.4em] text-gold mb-12">The Creator Toolkit</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="aspect-square bg-white/50 rounded-3xl flex flex-col items-center justify-center p-6 text-center border border-bone/5 hover:border-gold/50 transition">
+                        <div class="text-2xl mb-2">⚡</div>
+                        <h5 class="text-[10px] font-bold uppercase mb-2">Lighting</h5>
+                        <p class="text-[10px] opacity-50">Natural light only. No flash, no filters.</p>
+                    </div>
+                    <div class="aspect-square bg-white/50 rounded-3xl flex flex-col items-center justify-center p-6 text-center border border-bone/5 hover:border-gold/50 transition">
+                        <div class="text-2xl mb-2">📐</div>
+                        <h5 class="text-[10px] font-bold uppercase mb-2">Angles</h5>
+                        <p class="text-[10px] opacity-50">POV shots. Make them feel like they are there.</p>
+                    </div>
+                    <div class="aspect-square bg-white/50 rounded-3xl flex flex-col items-center justify-center p-6 text-center border border-bone/5 hover:border-gold/50 transition">
+                        <div class="text-2xl mb-2">🔇</div>
+                        <h5 class="text-[10px] font-bold uppercase mb-2">Sound</h5>
+                        <p class="text-[10px] opacity-50">Street noise > Music. Authenticity wins.</p>
+                    </div>
+                    <div class="aspect-square bg-white/50 rounded-3xl flex flex-col items-center justify-center p-6 text-center border border-bone/5 hover:border-gold/50 transition">
+                        <div class="text-2xl mb-2">✂️</div>
+                        <h5 class="text-[10px] font-bold uppercase mb-2">Length</h5>
+                        <p class="text-[10px] opacity-50">Keep it under 30s. Quick, sharp, vibey.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="business" class="py-40 px-6 reveal">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-24 items-center">
+            <div class="lg:w-1/2 text-start-rtl">
+                <h2 id="hub-tag" class="text-xs font-bold tracking-[0.4em] uppercase text-gold mb-6">Business Intelligence</h2>
+                <h3 id="biz-title-main" class="text-7xl font-extrabold leading-[0.9] mb-8">THE <br><span class="serif italic text-gold">STREET HUB.</span></h3>
+                <h3 id="biz-subtitle" class="text-2xl font-bold mb-6 text-deep-forest/40">For the shop owners who get it.</h3>
+                <p id="biz-desc" class="text-lg leading-relaxed mb-12 text-deep-forest/60">Forget paying for "impressions." Pay for real feet on the ground. StreetCred lets you set a budget and only pay when customers actually show up and promote you.</p>
+                <div class="flex gap-4">
+                    <button onclick="openModal()" id="hub-btn-1" class="btn-luxury">Register Shop</button>
+                    <button id="hub-btn-2" class="px-10 py-5 rounded-full border border-black/10 font-bold uppercase text-[10px] tracking-widest">Case Studies</button>
+                </div>
+
+                <div class="mt-12 bg-deep-forest p-8 rounded-[40px] border border-gold/20 text-bone">
+                    <div class="flex justify-between items-center mb-8 border-b border-bone/10 pb-4">
+                        <span class="text-gold font-bold text-[10px] uppercase">Live Bounty Analysis: test</span>
+                        <span class="bg-green-500/20 text-green-500 text-[8px] px-2 py-1 rounded font-bold">ACTIVE</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-start-rtl">
+                        <div class="p-6 bg-white/5 rounded-3xl">
+                            <div class="text-[10px] opacity-50 mb-1 uppercase tracking-widest">Foot Traffic</div>
+                            <div class="text-3xl font-bold text-bone">+142</div>
+                            <div class="text-[9px] text-gold font-bold uppercase">Verified Check-ins</div>
+                        </div>
+                        <div class="p-6 bg-white/5 rounded-3xl">
+                            <div class="text-[10px] opacity-50 mb-1 uppercase tracking-widest">Street Reach</div>
+                            <div class="text-3xl font-bold text-bone">24.5k</div>
+                            <div class="text-[9px] text-gold font-bold uppercase">Local Impressions</div>
+                        </div>
+                    </div>
+                    <div class="mt-6 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div class="h-full bg-gold w-[75%]"></div>
+                    </div>
+                    <p class="text-[9px] opacity-40 mt-4 text-center italic">"Real-world attribution. No bot interference."</p>
+                </div>
+            </div>
+            <div class="lg:w-1/2 relative">
+                <img src="https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=1200" class="rounded-[60px] shadow-2xl object-cover grayscale hover:grayscale-0 transition-all duration-700">
+            </div>
+        </div>
+    </section>
+
+    <section id="map-section" class="py-32 px-6 bg-deep-forest text-bone reveal">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 id="map-header" class="text-5xl md:text-8xl font-extrabold tracking-tighter mb-8">Live <span class="serif italic text-gold">Bounties.</span></h2>
+                <p id="map-info" class="text-bone/40 text-xl max-w-2xl mx-auto">The map is alive. Every blue pulse is a shop waiting for you. Click a pin to see the reward—ranging from free coffee and meals to direct cash payouts.</p>
+            </div>
+            
+            <div id="map"></div>
+            
+            <div class="flex flex-wrap gap-4 mt-12 justify-center">
+                <button onclick="map.flyTo([33.3128, 44.3615], 13)" class="px-8 py-3 border border-bone/10 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-gold hover:text-deep-forest transition">Baghdad</button>
+                <button onclick="map.flyTo([36.1901, 44.0091], 13)" class="px-8 py-3 border border-bone/10 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-gold hover:text-deep-forest transition">Erbil</button>
+                <button onclick="map.flyTo([35.5570, 45.4350], 13)" class="px-8 py-3 border border-bone/10 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-gold hover:text-deep-forest transition">Suli</button>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-12 mt-24 text-center">
+                <div>
+                    <div class="text-4xl font-bold text-gold mb-2">4</div>
+                    <div id="map-stat-1" class="text-[10px] uppercase font-bold tracking-widest opacity-40">Active Hotspots</div>
+                </div>
+                <div>
+                    <div class="text-4xl font-bold text-gold mb-2">$0</div>
+                    <div id="map-stat-2" class="text-[10px] uppercase font-bold tracking-widest opacity-40">Total Bounty Pool</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="community-gallery" class="py-40 bg-bone reveal overflow-hidden">
+        <div class="text-center mb-24">
+            <h2 id="gallery-tag" class="text-xs font-bold tracking-[0.4em] uppercase text-gold mb-6">Legacy & Culture</h2>
+            <h3 id="gallery-title" class="text-6xl md:text-8xl font-black text-deep-forest">Icons of the Streets</h3>
+        </div>
+        <div class="flex gap-8 overflow-x-auto pb-10 px-10 no-scrollbar">
+             <img src="https://i.pinimg.com/736x/ad/a7/9a/ada79afd2db935d7371a404b75010dc2.jpg" class="min-w-[400px] h-[600px] object-cover rounded-[60px]">
+             <img src="https://i.pinimg.com/736x/46/45/63/464563302fa6a79900aa250470b9f4d1.jpg" class="min-w-[400px] h-[600px] object-cover rounded-[60px]">
+             <img src="https://i.pinimg.com/736x/56/2d/67/562d670d05f77b8cb3041fd542f97d14.jpg" class="min-w-[400px] h-[600px] object-cover rounded-[60px]">
+             <img src="https://i.pinimg.com/1200x/7e/71/13/7e711344d9279214a0a0d92808bc9162.jpg" class="min-w-[400px] h-[600px] object-cover rounded-[60px]">
+        </div>
+    </section>
+
+    <section class="py-20">
+        <div class="max-w-7xl mx-auto">
+            <h3 class="serif italic text-4xl mb-16 text-center">Climb the Hierarchy</h3>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="p-12 section-card text-center opacity-100">
+                    <div class="text-gold font-bold mb-4 uppercase text-xs tracking-widest">Level 01</div>
+                    <h4 class="text-2xl font-black mb-4 uppercase">Tourist</h4>
+                    <p class="text-sm opacity-60">Access to Standard Bounties (Food & Coffee rewards).</p>
+                </div>
+                <div class="p-12 section-card text-center opacity-100 relative">
+                    <div class="text-gold font-bold mb-4 uppercase text-xs tracking-widest">Level 02</div>
+                    <h4 class="text-2xl font-black mb-4 uppercase text-deep-forest">Citizen</h4>
+                    <p class="text-sm opacity-70">Unlock Cash Bounties + Priority Booking on the Map.</p>
+                </div>
+               <div class="p-12 section-card text-center opacity-100">
+                    <div class="text-gold font-bold mb-4 uppercase text-xs tracking-widest">Level 03</div>
+                    <h4 class="text-2xl font-black mb-4 uppercase italic serif">Street Icon</h4>
+                    <p class="text-sm opacity-70">Unlock Elite Payouts & Private Business Lounge access.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="faq" class="py-40 px-6 bg-deep-forest text-bone reveal">
+        <div class="max-w-4xl mx-auto">
+            <h2 id="faq-title" class="text-5xl md:text-8xl font-black mb-24 text-center">Street Knowledge</h2>
+            <div id="faq-container" class="space-y-4"></div>
+        </div>
+    </section>
+
+    <footer class="py-20 text-center bg-deep-forest text-bone border-t border-bone/5">
+        <div class="text-[12vw] font-black text-gold/10 leading-none mb-10">STREETCRED</div>
+        <p class="text-[10px] font-bold tracking-[1em] opacity-30">2026 // FROM THE STREETS FOR THE STREETS</p>
+    </footer>
+
+    <div id="signup-modal" class="fixed inset-0 z-[5000] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-deep-forest/90 backdrop-blur-xl" onclick="closeModal()"></div>
+        <div class="relative bg-bone p-12 rounded-[60px] max-w-lg w-full z-10 text-deep-forest">
+            <h2 class="text-4xl font-extrabold uppercase mb-4">Join Phase 01</h2>
+            <p class="text-gold mb-10 text-xs font-bold uppercase tracking-widest">Limited access for neighborhood icons.</p>
+            <form id="waitlist-form" class="space-y-4">
+                <input name="Instagram" type="text" placeholder="Instagram Handle" required class="w-full bg-white border border-black/5 p-6 rounded-[25px] outline-none focus:border-gold">
+                <select name="City" class="w-full bg-white border border-black/5 p-6 rounded-[25px] outline-none appearance-none">
+                    <option>Baghdad</option>
+                    <option>Erbil</option>
+                    <option>Sulaymaniyah</option>
+                </select>
+                <input name="Phone" type="text" placeholder="ZainCash / FastPay Number" required class="w-full bg-white border border-black/5 p-6 rounded-[25px] outline-none focus:border-gold">
+                <button type="submit" id="submit-btn" class="w-full btn-luxury py-6">Secure My Spot</button>
+            </form>
+            <div id="success-msg" class="hidden text-gold font-bold uppercase mt-8 text-center text-sm italic">Verification in progress. Watch your inbox.</div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const translations = {
+            en: { 
+                dir: "ltr",
+                nav: ["How it works", "Creators", "Business", "FAQ"],
+                heroT: "STREETS <br><span class='serif italic text-gold'>OF IRAQ.</span>",
+                heroD: "The first hyper-local marketing engine built for the neighborhoods of Iraq. We turn your social influence into real-world rewards.",
+                heroB: ["Find a Bounty", "Post a Bounty"],
+                objTag: "Our Objective",
+                objTitle: "Killing the <br>Middleman.",
+                objDesc: "Traditional ads are broken. They take money from our local shops and give it to big tech companies. StreetCred keeps that money in the neighborhood by paying you to support the spots you love.",
+                stats: ["Local Verified", "Fake Impressions"],
+                creator: ["The Creator Portal", "Your City, <br><span class='serif italic text-gold'>Your Paycheck.</span>", "Have 1k+ followers? Stop posting for free. Visit local spots, share your vibe, and get paid in cash or VIP credits.", "Discover", "See who is offering a bounty in your neighborhood right now.", "Create", "Visit the shop, enjoy the experience, and post an authentic story or reel.", "Unlock", "Once verified, your cash reward or credit is released instantly."],
+                hub: ["Business Intelligence", "THE <br><span class='serif italic text-gold'>STREET HUB.</span>", "For the shop owners who get it.", "Forget paying for 'impressions.' Pay for real feet on the ground. StreetCred lets you set a budget and only pay when customers actually show up.", "Register Shop", "Case Studies"],
+                map: ["Live <br><span class='serif italic text-gold'>Bounties.</span>", "The map is alive. Every blue pulse is a shop waiting for you. Click a pin to see the reward.", "Active Hotspots", "Total Bounty Pool"],
+                gallery: ["Legacy & Culture", "Icons of the Streets"],
+                faq: "Street Knowledge",
+                faqItems: [
+                    ["Is this actually real money?", "Yes. We’re not talking about 'digital points.' When you finish a bounty, we send real cash to your ZainCash or FastPay. Simple as that."],
+                    ["Do I need a million followers?", "Nope. If you have 1,000 followers and people actually talk to you in your comments, you're in. We value your neighborhood trust more than a fake blue checkmark."],
+                    ["What if the food is bad?", "Look, we want you to be real. If a spot isn't your vibe, you don't have to lie. But the Bounties are for those who want to show the love. If you can't post something positive, just skip that Bounty and find a better one."],
+                    ["How do you guys make money?", "We take a small slice from the business for setting up the tech and keeping the map alive. The creator's bounty is theirs to keep."],
+                    ["Is my city on the map?", "We're currently lighting up Baghdad, Erbil, and Suli. If you want us in your town next, hit us up and start the noise."],
+                    ["Will businesses try to scam me?", "Not on our watch. The money for the bounty is locked in our system the moment they post it. Once your work is verified, the money moves. No 'checking with the manager' required."]
+                ]
+            },
+            ar: { 
+                dir: "rtl",
+                nav: ["كيف نعمل", "المبدعين", "الأعمال", "الأسئلة"],
+                heroT: "شوارع <br><span class='serif italic text-gold'>العراق.</span>",
+                heroD: "أول محرك تسويق محلي مصمم لأحياء العراق. نحول تأثيرك الاجتماعي إلى مكافآت حقيقية.",
+                heroB: ["جد مكافأة", "أضف مكافأة"],
+                objTag: "هدفنا",
+                objTitle: "القضاء على <br>الوسطاء.",
+                objDesc: "الإعلانات التقليدية فاشلة. تأخذ الأموال من محلاتنا المحلية وتعطيها لشركات التكنولوجيا الكبرى. ستريت كريد تبقي هذه الأموال في الحي.",
+                stats: ["توثيق محلي", "انطباعات وهمية"],
+                creator: ["بوابة المبدعين", "مدينتك، <br><span class='serif italic text-gold'>راتبك.</span>", "لديك أكثر من ١٠٠٠ متابع؟ توقف عن النشر مجاناً. زر المواقع المحلية واحصل على نقد أو رصيد VIP.", "اكتشف", "شاهد من يقدم مكافأة في منطقتك الآن.", "صوّر", "زر المحل، استمتع بالتجربة وانشر قصة أو ريل حقيقي.", "استلم", "بمجرد التحقق، يتم صرف مكافأتك النقدية فوراً."],
+                hub: ["ذكاء الأعمال", "مركز <br><span class='serif italic text-gold'>الشوارع.</span>", "لأصحاب المحلات الأذكياء.", "انسَ الدفع مقابل 'المشاهدات'. ادفع مقابل أشخاص حقيقيين يأتون لمحلك. ستريت كريد تتيح لك تحديد ميزانية والدفع فقط عند الحضور.", "سجل محلك", "دراسات حالة"],
+                map: ["مكافآت <br><span class='serif italic text-gold'>مباشرة.</span>", "الخريطة حية. كل نبضة زرقاء هي متجر في انتظارك. اضغط على الدبوس لرؤية المكافأة.", "نقاط نشطة", "إجمالي المكافآت"],
+                gallery: ["الإرث والثقافة", "أيقونات الشوارع"],
+                faq: "ثقافة الشارع",
+                faqItems: [
+                    ["هل هي فلوس حقيقية فعلاً؟", "إي نعم. مدي نحكي عن 'نقاط وهمية'. من تكمل المهمة، نحولك فلوس حقيقية على زين كاش أو فاست باي. بكل بساطة."],
+                    ["لازم عندي مليون متابع؟", "لا طبعاً. إذا عندك ١٠٠٠ متابع حقيقي والناس تتفاعل وياك، إنت ويانا. ثقة منطقتك بيك أهم عندنا من العلامة الزرقاء."],
+                    ["وإذا الأكل مو طيب؟", "شوف، إحنا نريد الصراحة. إذا المكان مو جوّك، مو لازم تجامل. بس المكافآت للي يريد يدعم المحلات. إذا ما كدرت تنشر شي إيجابي، اترك هذي المهمة وشوف غيرها."],
+                    ["إنتو شلون تربحون؟", "ناخذ نسبة صغيرة من صاحب العمل مقابل نوفرله هذي التقنية ونشغل الخريطة. والفلوس اللي تجيك هي إلك بالكامل."],
+                    ["مدينتي موجودة عالخريطة؟", "حالياً إحنا منورين بغداد، أربيل، والسليمانية. إذا تريدنا بمدينتك، سمعنا صوتك واحجي عنا."],
+                    ["خاف صاحب المحل يغلس وما يدفع؟", "ماكو هيج شي يمنا. الفلوس تنحجز بالنظام مالتنا بمجرد ما ينزل الإعلان. من يتوثق شغلك، الفلوس تجيك فوراً."]
+                ]
+            },
+            ku: { 
+                dir: "rtl",
+                nav: ["چۆن کار دەکات", "دروستکەران", "بزنس", "پرسیارەکان"],
+                heroT: "شەقامەکانی <br><span class='serif italic text-gold'>عێراق.</span>",
+                heroD: "یەکەم بزوێنەری مارکێتینگ بۆ گەڕەکەکانی عێراق. کاریگەری تۆ دەکەین بە پارە.",
+                heroB: ["خەڵات بدۆزەرەوە", "خەڵات دابنێ"],
+                objTag: "ئامانجمان",
+                objTitle: "کۆتاییهێنان بە <br>ناوەندگیرەکان.",
+                objDesc: "ڕیکلامە کۆنەکان سوودیان نییە. پارە لە دوکانەکانمان دەبەن و دەیدەن بە کۆمپانیا گەورەکان. ستریت کرێد ئەو پارەیە لە ناو گەڕەکدا دەهێڵێتەوە.",
+                stats: ["ناوخۆیی", "بینینی ساختە"],
+                creator: ["بۆ دروستکەران", "شارەکەت، <br><span class='serif italic text-gold'>مووچەکەت.</span>", "زیاتر لە ١٠٠٠ فۆڵۆوەرت هەیە؟ بەخۆڕایی بڵاو مەکەرەوە. سەردانی شوێنەکان بکە و پارە وەربگرە.", "بدۆزەرەوە", "ببینە کێ لە گەڕەکەکەت خەڵات دەبەخشێت.", "دروست بکە", "سەردانی شوێنەکە بکە و ڤیدیۆیەکی ڕاستەقینە بڵاو بکەرەوە.", "وەر بگرە", "دوای دڵنیابوونەوە، پارەکەت دەستبەجێ بۆ دێت."],
+                hub: ["زانیاری بزنس", "ناوەندی <br><span class='serif italic text-gold'>شەقام.</span>", "بۆ خاوەن بزنسە هۆشیارەکان.", "پارە بۆ 'بینین' مەدە. تەنها کاتێک پارە بدە کە کڕیار بێتە دوکانەکەت.", "تۆمارکردن", "نموونەکان"],
+                map: ["خەڵاتی <br><span class='serif italic text-gold'>ڕاستەقینە.</span>", "نەخشەکە زیندووە. هەموو لێدانێکی شین دوکانێکە چاوەڕێی تۆ دەکات.", "شوێنی چالاک", "کۆی خەڵاتەکان"],
+                gallery: ["کەلتوور", "ئایکۆنی شەقامەکان"],
+                faq: "زانیاری شەقام",
+                faqItems: [
+                    ["بە ڕاستی پارەیە؟", "بەڵێ. باس لە خاڵی دیجیتاڵ ناکەین. کە ئیشەکەت تەواو کرد، پارە دەچێتە سەر ZainCash یان FastPay. زۆر سادەیە."],
+                    ["دەبێت ملیۆنێک فۆڵۆوەرم هەبێت؟", "نەخێر. ئەگەر ١٠٠٠ فۆڵۆوەری ڕاستەقینەت هەبێت و خەڵک قسەت لەگەڵ بکات، تەواوە. متمانەی گەڕەکەکەت لای ئێمە گرنگترە."],
+                    ["ئەی ئەگەر خواردنەکە ناخۆش بوو؟", "سەیرکە، ئێمە ڕاستگۆییمان دەوێت. ئەگەر شوێنەکە بە دڵت نەبوو, درۆ مەکە. بەڵام خەڵاتەکان بۆ پشتگیرییە. ئەگەر ناتوانی شتی باش بڵێی، ئەو خەڵاتە وا لێبگە و دانەیەکی تر بدۆزەرەوە."],
+                    ["ئێوە چۆن قازانج دەکەن؟", "ئێمە بڕێکی کەم لە خاوەن بزنسەکە وەردەگرین بۆ بەڕێوەبردنی نەخشەکە. پارەی دروستکەرەکە بۆ خۆیەتی."],
+                    ["شارەکەی من لەسەر نەخشەیە؟", "ئێستا لە بەغدا، هەولێر و سلێمانین. ئەگەر دەتەوێت بێینە شاری تۆش، دەنگمان پێ بدە."],
+                    ["خاوەن دوکانەکان فێڵم لێ ناکەن؟", "نەخێر. پارەکە لای ئێمە قفڵ دەکرێت پێش ئەوەی ڕیکلامەکە دابنرێت. هەر کە پۆستەکەت پشتڕاست کرایەوە، پارەکە بۆت دێت."]
+                ]
+            }
+        };
+
+        function changeLang(lang) {
+            const d = translations[lang];
+            document.body.dir = d.dir;
+            for(let i=1; i<=4; i++) {
+                const navEl = document.getElementById(`nav-${i}`);
+                if(navEl) navEl.innerText = d.nav[i-1];
+            }
+            document.getElementById('hero-title').innerHTML = d.heroT;
+            document.getElementById('hero-desc').innerText = d.heroD;
+            document.getElementById('hero-btn-1').innerText = d.heroB[0];
+            document.getElementById('hero-btn-2').innerText = d.heroB[1];
+            document.getElementById('obj-tag').innerText = d.objTag;
+            document.getElementById('obj-title').innerHTML = d.objTitle;
+            document.getElementById('obj-desc').innerHTML = d.objDesc;
+            document.getElementById('stat-1').innerText = d.stats[0];
+            document.getElementById('stat-2').innerText = d.stats[1];
+
+            document.getElementById('creator-tag').innerText = d.creator[0];
+            document.getElementById('creator-title').innerHTML = d.creator[1];
+            document.getElementById('creator-desc').innerText = d.creator[2];
+            document.getElementById('c-step-1-t').innerText = d.creator[3];
+            document.getElementById('c-step-1-d').innerText = d.creator[4];
+            document.getElementById('c-step-2-t').innerText = d.creator[5];
+            document.getElementById('c-step-2-d').innerText = d.creator[6];
+            document.getElementById('c-step-3-t').innerText = d.creator[7];
+            document.getElementById('c-step-3-d').innerText = d.creator[8];
+
+            document.getElementById('hub-tag').innerText = d.hub[0];
+            document.getElementById('biz-title-main').innerHTML = d.hub[1];
+            document.getElementById('biz-subtitle').innerText = d.hub[2];
+            document.getElementById('biz-desc').innerText = d.hub[3];
+            document.getElementById('hub-btn-1').innerText = d.hub[4];
+            document.getElementById('hub-btn-2').innerText = d.hub[5];
+
+            document.getElementById('map-header').innerHTML = d.map[0];
+            document.getElementById('map-info').innerText = d.map[1];
+            document.getElementById('map-stat-1').innerText = d.map[2];
+            document.getElementById('map-stat-2').innerText = d.map[3];
+            document.getElementById('gallery-tag').innerText = d.gallery[0];
+            document.getElementById('gallery-title').innerText = d.gallery[1];
+            document.getElementById('faq-title').innerText = d.faq;
+
+            const faqCont = document.getElementById('faq-container');
+            faqCont.innerHTML = '';
+            d.faqItems.forEach(item => {
+                faqCont.innerHTML += `
+                    <div class="p-8 border border-bone/10 rounded-[30px] cursor-pointer hover:border-gold transition-all" onclick="this.querySelector('p').classList.toggle('hidden')">
+                        <h4 class="font-bold flex justify-between"><span>${item[0]}</span> <span class="text-gold">+</span></h4>
+                        <p class="text-bone/40 mt-6 hidden leading-relaxed">${item[1]}</p>
+                    </div>
+                `;
+            });
+
+            ['en', 'ar', 'ku'].forEach(l => document.getElementById(`btn-${l}`).classList.remove('active-lang'));
+            document.getElementById(`btn-${lang}`).classList.add('active-lang');
+        }
+
+        const map = L.map('map', { zoomControl: false }).setView([34.5, 44.5], 6);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png').addTo(map);
+
+        const pins = [
+            { name: "test", coords: [33.2985, 44.3410], reward: "$40 + Dinner" },
+            { name: "test", coords: [36.1850, 43.9700], reward: "$30 Bounty" },
+            { name: "test", coords: [33.3150, 44.3600], reward: "$30 Bounty" },
+            { name: "test", coords: [33.2685, 44.4020], reward: "$30 Bounty" },
+            { name: "test", coords: [36.1750, 44.0250], reward: "$30 Bounty" },
+            { name: "test", coords: [35.5480, 45.3980], reward: "$30 Bounty" },
+            { name: "test", coords: [35.5750, 45.4050], reward: "$30 Bounty" },
+            { name: "test", coords: [35.5840, 45.4510], reward: "$30 Bounty" },
+            { name: "test", coords: [36.2550, 44.0320], reward: "$30 Bounty" },
+            { name: "test", coords: [36.1550, 43.9850], reward: "$30 Bounty" },
+            { name: "test", coords: [35.5620, 45.4200], reward: "1 SHAQ" }
+        ];
+
+        pins.forEach(p => {
+            const customIcon = L.divIcon({ className: 'pulse-marker', iconSize: [12, 12] });
+            L.marker(p.coords, { icon: customIcon }).addTo(map).bindPopup(`<b>${p.name}</b><br>${p.reward}`);
+        });
+
+        window.addEventListener("scroll", () => {
+            document.querySelectorAll(".reveal").forEach(el => {
+                if (el.getBoundingClientRect().top < window.innerHeight - 100) el.classList.add("active");
+            });
+        });
+
+        function openModal() {
+            const modal = document.getElementById('signup-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('signup-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyA3AH2I4BKWHwqMLChgI1tcK4NcKGt43vVCFYBSY_g6_I0uBwztEwYAQ9AvbvRm4u4/exec'; 
+        const form = document.getElementById('waitlist-form');
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.innerHTML = "REGISTERING...";
+            btn.disabled = true;
+
+            fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+                .then(response => {
+                    btn.classList.add('hidden');
+                    document.getElementById('success-msg').classList.remove('hidden');
+                    setTimeout(() => {
+                        closeModal();
+                        window.location.href = "https://www.instagram.com/streetcred.iq"; 
+                    }, 3000);
+                })
+                .catch(error => {
+                    alert('Error! Check connection.');
+                    btn.disabled = false;
+                    btn.innerHTML = "Secure My Spot";
+                });
+        });
+
+        changeLang('en');
+    </script>
+</body>
+</html>
