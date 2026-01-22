@@ -59,6 +59,12 @@
         .marquee-content { display: flex; animation: marquee 30s linear infinite; width: max-content; }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
+        /* Infinite Scroll for Gallery */
+        .gallery-container { overflow: hidden; width: 100%; position: relative; }
+        .gallery-track { display: flex; width: max-content; animation: galleryScroll 40s linear infinite; }
+        @keyframes galleryScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .gallery-track:hover { animation-play-state: paused; }
+
         .btn-luxury {
             background: var(--deep-forest);
             color: var(--bone);
@@ -89,12 +95,24 @@
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* MOBILE OPTIMIZATIONS */
+        @media (max-width: 768px) {
+            nav { padding: 1rem !important; }
+            .logo-text { font-size: 1.1rem !important; }
+            .lang-btn { padding: 0.4rem 0.5rem !important; font-size: 8px !important; }
+            .join-btn { padding: 0.5rem 1rem !important; font-size: 8px !important; }
+            
+            #hero-title { font-size: 4rem !important; line-height: 1; }
+            .section-card { padding: 2rem !important; }
+            .gallery-track img { min-width: 280px !important; h-auto !important; height: 400px !important; }
+        }
     </style>
 </head>
 <body class="bg-noise">
 
     <nav class="flex justify-between items-center p-8 sticky top-0 z-[1000] bg-bone/80 backdrop-blur-md">
-        <div class="text-2xl font-black tracking-tighter flex items-center gap-2">
+        <div class="logo-text text-2xl font-black tracking-tighter flex items-center gap-1 shrink-0">
             <span class="text-deep-forest">STREETCRED</span> 
             <span class="text-gold italic">IQ</span>
         </div>
@@ -104,18 +122,19 @@
             <a href="#business" id="nav-3" class="hover:text-gold transition">Business</a>
             <a href="#faq" id="nav-4" class="hover:text-gold transition">FAQ</a>
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 md:gap-4">
             <div class="flex bg-white rounded-full p-1 border border-black/5 shadow-sm">
-                <button id="btn-en" onclick="changeLang('en')" class="px-3 py-1 text-[10px] font-bold rounded-full active-lang">EN</button>
-                <button id="btn-ar" onclick="changeLang('ar')" class="px-3 py-1 text-[10px] font-bold rounded-full">AR</button>
-                <button id="btn-ku" onclick="changeLang('ku')" class="px-3 py-1 text-[10px] font-bold rounded-full">KU</button>
+                <button id="btn-en" onclick="changeLang('en')" class="lang-btn px-3 py-1 text-[10px] font-bold rounded-full active-lang">EN</button>
+                <button id="btn-ar" onclick="changeLang('ar')" class="lang-btn px-3 py-1 text-[10px] font-bold rounded-full">AR</button>
+                <button id="btn-ku" onclick="changeLang('ku')" class="lang-btn px-3 py-1 text-[10px] font-bold rounded-full">KU</button>
             </div>
-            <button onclick="openModal()" class="bg-white text-bone px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-gold transition">Join</button>
+            <button onclick="openModal()" class="join-btn bg-white text-bone px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-gold transition shadow-sm border border-black/5">Join</button>
         </div>
     </nav>
 
     <header class="relative min-h-[90vh] flex flex-col justify-center items-center text-center px-4 hero-bg rounded-b-[60px] md:rounded-b-[100px] overflow-hidden">
         <div class="relative z-10 reveal active max-w-5xl">
+            <div class="inline-block border border-gold/30 text-gold px-6 py-2 rounded-full text-[10px] font-bold uppercase tracking-[0.5em] mb-8 backdrop-blur-sm">Phase One Is Live</div>
             <h1 id="hero-title" class="text-7xl md:text-[140px] font-extrabold mb-8 tracking-tighter leading-[0.85] text-black">STREETS <br><span class="serif italic text-gold font-light">OF IRAQ.</span></h1>
             <p id="hero-desc" class="text-lg md:text-2xl text-bone/70 max-w-2xl mx-auto mb-12 font-light leading-relaxed">The first hyper-local marketing engine built for the neighborhoods of Iraq. We turn your social influence into real-world rewards.</p>
             <div class="flex flex-col md:flex-row gap-6 justify-center">
@@ -298,11 +317,20 @@
             <h2 id="gallery-tag" class="text-xs font-bold tracking-[0.4em] uppercase text-gold mb-6">Legacy & Culture</h2>
             <h3 id="gallery-title" class="text-6xl md:text-8xl font-black text-deep-forest">Icons of the Streets</h3>
         </div>
-        <div class="flex gap-8 overflow-x-auto pb-10 px-10 no-scrollbar">
-             <img src="https://i.pinimg.com/736x/ad/a7/9a/ada79afd2db935d7371a404b75010dc2.jpg" class="min-w-[400px] h-[600px] object-cover rounded-[60px]">
-             <img src="https://i.pinimg.com/736x/46/45/63/464563302fa6a79900aa250470b9f4d1.jpg" class="min-w-[400px] h-[600px] object-cover rounded-[60px]">
-             <img src="https://i.pinimg.com/736x/56/2d/67/562d670d05f77b8cb3041fd542f97d14.jpg" class="min-w-[400px] h-[600px] object-cover rounded-[60px]">
-             <img src="https://i.pinimg.com/1200x/7e/71/13/7e711344d9279214a0a0d92808bc9162.jpg" class="min-w-[400px] h-[600px] object-cover rounded-[60px]">
+        <div class="gallery-container">
+            <div class="gallery-track">
+                 <div class="gallery-track">
+     <img src="https://i.pinimg.com/736x/ad/a7/9a/ada79afd2db935d7371a404b75010dc2.jpg" class="min-w-[300px] h-[450px] object-cover rounded-[40px] mx-4">
+     <img src="https://i.pinimg.com/736x/46/45/63/464563302fa6a79900aa250470b9f4d1.jpg" class="min-w-[300px] h-[450px] object-cover rounded-[40px] mx-4">
+     <img src="https://i.pinimg.com/736x/56/2d/67/562d670d05f77b8cb3041fd542f97d14.jpg" class="min-w-[300px] h-[450px] object-cover rounded-[40px] mx-4">
+     <img src="https://i.pinimg.com/1200x/7e/71/13/7e711344d9279214a0a0d92808bc9162.jpg" class="min-w-[300px] h-[450px] object-cover rounded-[40px] mx-4">
+     
+     <img src="https://i.pinimg.com/736x/ad/a7/9a/ada79afd2db935d7371a404b75010dc2.jpg" class="min-w-[300px] h-[450px] object-cover rounded-[40px] mx-4">
+     <img src="https://i.pinimg.com/736x/46/45/63/464563302fa6a79900aa250470b9f4d1.jpg" class="min-w-[300px] h-[450px] object-cover rounded-[40px] mx-4">
+     <img src="https://i.pinimg.com/736x/56/2d/67/562d670d05f77b8cb3041fd542f97d14.jpg" class="min-w-[300px] h-[450px] object-cover rounded-[40px] mx-4">
+     <img src="https://i.pinimg.com/1200x/7e/71/13/7e711344d9279214a0a0d92808bc9162.jpg" class="min-w-[300px] h-[450px] object-cover rounded-[40px] mx-4">
+</div>
+            </div>
         </div>
     </section>
 
@@ -395,7 +423,7 @@
                 heroB: ["جد مكافأة", "أضف مكافأة"],
                 objTag: "هدفنا",
                 objTitle: "القضاء على <br>الوسطاء.",
-                objDesc: "الإعلانات التقليدية فاشلة. تأخذ الأموال من محلاتنا المحلية وتعطيها لشركات التكنولوجيا الكبرى. ستريت كريد تبقي هذه الأموال في الحي.",
+                objDesc: "الإعلانات التقليدية فاشلة. تأخذ الأموال من محلاتنا المحلية وتعطيه لشركات التكنولوجيا الكبرى. ستريت كريد تبقي هذه الأموال في الحي.",
                 stats: ["توثيق محلي", "انطباعات وهمية"],
                 creator: ["بوابة المبدعين", "مدينتك، <br><span class='serif italic text-gold'>راتبك.</span>", "لديك أكثر من ١٠٠٠ متابع؟ توقف عن النشر مجاناً. زر المواقع المحلية واحصل على نقد أو رصيد VIP.", "اكتشف", "شاهد من يقدم مكافأة في منطقتك الآن.", "صوّر", "زر المحل، استمتع بالتجربة وانشر قصة أو ريل حقيقي.", "استلم", "بمجرد التحقق، يتم صرف مكافأتك النقدية فوراً."],
                 hub: ["ذكاء الأعمال", "مركز <br><span class='serif italic text-gold'>الشوارع.</span>", "لأصحاب المحلات الأذكياء.", "انسَ الدفع مقابل 'المشاهدات'. ادفع مقابل أشخاص حقيقيين يأتون لمحلك. ستريت كريد تتيح لك تحديد ميزانية والدفع فقط عند الحضور.", "سجل محلك", "دراسات حالة"],
@@ -562,5 +590,4 @@
         changeLang('en');
     </script>
 </body>
-
 </html>
