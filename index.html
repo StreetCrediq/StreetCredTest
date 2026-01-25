@@ -560,6 +560,9 @@
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         }
+        window.onload = function() {
+    setTimeout(openModal, 2000);
+};
 
         const scriptURL = 'https://script.google.com/macros/s/AKfycbyA3AH2I4BKWHwqMLChgI1tcK4NcKGt43vVCFYBSY_g6_I0uBwztEwYAQ9AvbvRm4u4/exec'; 
         const form = document.getElementById('waitlist-form');
@@ -590,3 +593,4 @@
     </script>
 </body>
 </html>
+
